@@ -1,4 +1,5 @@
 """
+<<<<<<< HEAD
 Road Damage Detector - CV Project
 Detects road damage from images using AI, stores with location, deduplicates entries.
 """
@@ -326,4 +327,254 @@ def delete_report(report_id):
 if __name__ == '__main__':
     init_db()
     print("\n🚧 Road Damage Detector running at http://localhost:5000\n")
+=======
+RoadScan AI — Flask Web App
+Loads trained EfficientNet-B4 model, detects road damage,
+saves results (image + location) to live dataset CSV.
+"""
+
+import os, json, csv, uuid, hashlib, shutil
+from pathlib import Path
+from datetime import datetime
+from flask import Flask, render_template, request, jsonify, send_from_directory
+
+app = Flask(__name__)
+app.config['UPLOAD_FOLDER'] = 'uploads'
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
+
+ALLOWED = {'png','jpg','jpeg','webp'}
+DATASET_CSV = Path('live_dataset.csv')
+CSV_FIELDS  = [
+    'image_id','filename','label','damage_probability',
+    'confidence_level','location_name','latitude','longitude',
+    'timestamp','source'
+]
+
+# ── Init CSV ───────────────────────────────────────────────────────
+if not DATASET_CSV.exists():
+    with open(DATASET_CSV, 'w', newline='') as f:
+        csv.writer(f).writerow(CSV_FIELDS)
+
+Path('uploads').mkdir(exist_ok=True)
+
+# ── Load Model ─────────────────────────────────────────────────────
+MODEL = None
+DEVICE = 'cpu'
+
+def load_model():
+    global MODEL, DEVICE
+    model_path = Path('road_damage_model.pth')
+    meta_path  = Path('model_metadata.json')
+
+    if not model_path.exists():
+        print('⚠ road_damage_model.pth not found')
+        print('  Run the Colab notebook to train and download the model')
+        print('  Then place road_damage_model.pth in this folder')
+        return False
+
+    try:
+        import torch, timm
+        import torch.nn as nn
+
+        DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
+
+        # Load metadata
+        if meta_path.exists():
+            with open(meta_path) as f:
+                meta = json.load(f)
+            arch = meta.get('model_arch', 'efficientnet_b4')
+        else:
+            arch = 'efficientnet_b4'
+
+        # Recreate model
+        class RoadDamageModel(nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.backbone = timm.create_model(arch, pretrained=False,
+                                                  num_classes=0, global_pool='avg')
+                feat_dim = self.backbone.num_features
+                self.head = nn.Sequential(
+                    nn.Dropout(0.3),
+                    nn.Linear(feat_dim, 512),
+                    nn.BatchNorm1d(512),
+                    nn.ReLU(inplace=True),
+                    nn.Dropout(0.15),
+                    nn.Linear(512, 128),
+                    nn.ReLU(inplace=True),
+                    nn.Linear(128, 2)
+                )
+            def forward(self, x):
+                return self.head(self.backbone(x))
+
+        model = RoadDamageModel()
+        model.load_state_dict(torch.load(model_path, map_location=DEVICE))
+        model.to(DEVICE)
+        model.eval()
+        MODEL = model
+        print(f'✅ Model loaded ({arch}) on {DEVICE}')
+        return True
+
+    except Exception as e:
+        print(f'❌ Model load failed: {e}')
+        return False
+
+MODEL_LOADED = load_model()
+
+# ── Inference ─────────────────────────────────────────────────────
+def predict(img_path: str):
+    if not MODEL_LOADED:
+        return None, None  # model not available
+
+    try:
+        import torch, torch.nn.functional as F
+        from torchvision import transforms
+        from PIL import Image
+
+        tf = transforms.Compose([
+            transforms.Resize((224, 224)),
+            transforms.ToTensor(),
+            transforms.Normalize([0.485,0.456,0.406],[0.229,0.224,0.225]),
+        ])
+
+        img    = Image.open(img_path).convert('RGB')
+        tensor = tf(img).unsqueeze(0).to(DEVICE)
+
+        with torch.no_grad():
+            logits = MODEL(tensor)
+            probs  = F.softmax(logits, dim=1)[0].cpu().numpy()
+
+        return float(probs[1]), float(probs[0])  # damaged_prob, clean_prob
+
+    except Exception as e:
+        print(f'Inference error: {e}')
+        return None, None
+
+# ── Helpers ───────────────────────────────────────────────────────
+def file_hash(path):
+    h = hashlib.sha256()
+    with open(path,'rb') as f:
+        for chunk in iter(lambda: f.read(8192), b''):
+            h.update(chunk)
+    return h.hexdigest()
+
+def allowed(filename):
+    return '.' in filename and filename.rsplit('.',1)[1].lower() in ALLOWED
+
+def append_dataset(img_id, filename, label, dam_prob, loc_name, lat, lng):
+    conf = ('high'   if dam_prob > 0.85 or dam_prob < 0.15 else
+            'medium' if dam_prob > 0.65 or dam_prob < 0.35 else 'low')
+    with open(DATASET_CSV, 'a', newline='') as f:
+        csv.writer(f).writerow([
+            img_id, filename, label,
+            f'{dam_prob:.4f}', conf,
+            loc_name or 'Unknown',
+            lat or '', lng or '',
+            datetime.now().isoformat(),
+            'web_upload'
+        ])
+
+# ── Routes ────────────────────────────────────────────────────────
+@app.route('/')
+def index():
+    return render_template('index.html', model_loaded=MODEL_LOADED)
+
+@app.route('/uploads/<path:filename>')
+def uploaded(filename):
+    return send_from_directory('uploads', filename)
+
+@app.route('/api/detect', methods=['POST'])
+def detect():
+    if 'image' not in request.files:
+        return jsonify({'error': 'No image provided'}), 400
+
+    f = request.files['image']
+    if not f.filename or not allowed(f.filename):
+        return jsonify({'error': 'Invalid file type. Use JPG/PNG/WEBP'}), 400
+
+    lat      = request.form.get('lat', type=float)
+    lng      = request.form.get('lng', type=float)
+    loc_name = request.form.get('location_name', 'Unknown')
+
+    # Save file
+    ext      = f.filename.rsplit('.',1)[1].lower()
+    img_id   = uuid.uuid4().hex[:12].upper()
+    filename = f'{img_id}.{ext}'
+    filepath = str(Path('uploads') / filename)
+    f.save(filepath)
+
+    # Deduplicate by hash
+    h = file_hash(filepath)
+    df = _load_dataset()
+    # (simple in-memory dedup check on filename/id — extend as needed)
+
+    # Run detection
+    if MODEL_LOADED:
+        dam_prob, clean_prob = predict(filepath)
+        if dam_prob is None:
+            return jsonify({'error': 'Inference failed'}), 500
+        label = 'damaged' if dam_prob >= 0.5 else 'clean'
+        confidence = max(dam_prob, clean_prob) * 100
+    else:
+        # No model — return placeholder
+        return jsonify({
+            'error': 'Model not loaded. Train and download road_damage_model.pth from Colab first.',
+            'model_loaded': False
+        }), 503
+
+    # Save to dataset
+    # Move image to labelled subfolder inside uploads
+    labelled_dir = Path('uploads') / label
+    labelled_dir.mkdir(exist_ok=True)
+    labelled_path = labelled_dir / filename
+    shutil.copy2(filepath, labelled_path)
+
+    append_dataset(img_id, filename, label, dam_prob, loc_name, lat, lng)
+
+    return jsonify({
+        'status'          : 'success',
+        'image_id'        : img_id,
+        'label'           : label,
+        'is_damaged'      : label == 'damaged',
+        'damage_prob'     : round(dam_prob * 100, 1),
+        'clean_prob'      : round(clean_prob * 100, 1),
+        'confidence'      : round(confidence, 1),
+        'location_name'   : loc_name,
+        'latitude'        : lat,
+        'longitude'       : lng,
+        'image_url'       : f'/uploads/{filename}',
+        'timestamp'       : datetime.now().isoformat(),
+        'saved_to_dataset': True
+    })
+
+@app.route('/api/dataset', methods=['GET'])
+def get_dataset():
+    rows = _load_dataset()
+    return jsonify({'records': rows, 'total': len(rows)})
+
+@app.route('/api/stats')
+def stats():
+    rows = _load_dataset()
+    damaged = [r for r in rows if r.get('label') == 'damaged']
+    clean   = [r for r in rows if r.get('label') == 'clean']
+    return jsonify({
+        'total'  : len(rows),
+        'damaged': len(damaged),
+        'clean'  : len(clean),
+        'model_loaded': MODEL_LOADED
+    })
+
+def _load_dataset():
+    try:
+        import pandas as pd
+        df = pd.read_csv(DATASET_CSV)
+        return df.to_dict('records')
+    except:
+        return []
+
+if __name__ == '__main__':
+    print('\n🚧 RoadScan AI starting...')
+    print(f'   Model loaded : {MODEL_LOADED}')
+    print(f'   Dataset CSV  : {DATASET_CSV}')
+    print(f'   Open browser : http://localhost:5000\n')
+>>>>>>> f4b14cb (Initial commit)
     app.run(debug=True, host='0.0.0.0', port=5000)

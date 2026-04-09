@@ -1,0 +1,2 @@
+image_id,filename,label,damage_probability,confidence_level,location_name,latitude,longitude,timestamp,source
+E95DAC9D0AAB,E95DAC9D0AAB.jpg,damaged,0.9024,high,"Sadar, Nagpur",21.177301,79.061502,2026-04-09T12:05:52.129886,web_upload

@@ -3,12 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<<<<<<< HEAD
 <title>RoadScan AI — Road Damage Detection System</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
+=======
+<title>RoadScan AI — Road Damage Detector</title>
+>>>>>>> f4b14cb (Initial commit)
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
+<<<<<<< HEAD
   :root {
     --bg: #0a0c0f;
     --surface: #111418;
@@ -605,10 +610,238 @@
     font-weight: 700;
     color: var(--accent);
   }
+=======
+:root {
+  --bg:#0a0c0f; --s1:#111418; --s2:#181c22; --s3:#1e242c;
+  --bd:#252b35; --bd2:#2e3645;
+  --amber:#f5a623; --red:#e84545; --green:#3ddc84; --blue:#378ADD;
+  --text:#e8eaf0; --muted:#6b7280; --dim:#404854;
+  --mono:'Space Mono',monospace; --sans:'Syne',sans-serif;
+  --r:12px; --tr:0.2s ease;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;overflow-x:hidden}
+
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:
+    linear-gradient(rgba(245,166,35,.03) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(245,166,35,.03) 1px,transparent 1px);
+  background-size:48px 48px;
+}
+
+/* ── HEADER ── */
+header{
+  position:sticky;top:0;z-index:200;
+  background:rgba(10,12,15,.94);backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--bd);
+  height:60px;padding:0 2rem;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+.logo-box{
+  width:30px;height:30px;border-radius:7px;
+  background:var(--amber);display:grid;place-items:center;font-size:14px;
+}
+.logo-text{font-weight:800;font-size:1.1rem;color:var(--amber);letter-spacing:-0.5px}
+.logo-text span{color:var(--text)}
+.header-right{display:flex;align-items:center;gap:12px}
+.model-badge{
+  font-family:var(--mono);font-size:.68rem;padding:3px 10px;
+  border-radius:20px;letter-spacing:1px;
+}
+.badge-ok  {border:1px solid var(--green);color:var(--green)}
+.badge-err {border:1px solid var(--red);  color:var(--red)}
+
+/* ── LAYOUT ── */
+.wrap{max-width:1380px;margin:0 auto;padding:1.5rem 2rem;position:relative;z-index:1}
+
+.hero{text-align:center;padding:2.5rem 0 2rem}
+.hero h1{font-size:clamp(2rem,5vw,3.6rem);font-weight:800;line-height:1.05;letter-spacing:-2px}
+.hero h1 span{color:var(--amber)}
+.hero p{font-family:var(--mono);font-size:.78rem;color:var(--muted);margin-top:.8rem;letter-spacing:.5px}
+
+/* ── STATS ── */
+.stats{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:1px;
+  background:var(--bd);border:1px solid var(--bd);border-radius:var(--r);
+  overflow:hidden;margin-bottom:1.5rem;
+}
+.stat{background:var(--s1);padding:1rem 1.2rem;text-align:center;transition:background var(--tr)}
+.stat:hover{background:var(--s2)}
+.stat-n{font-family:var(--mono);font-size:1.7rem;font-weight:700;color:var(--amber)}
+.stat-l{font-size:.68rem;color:var(--muted);margin-top:2px;letter-spacing:.8px;text-transform:uppercase}
+
+/* ── GRID ── */
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem}
+@media(max-width:860px){.grid{grid-template-columns:1fr}}
+
+/* ── CARD ── */
+.card{background:var(--s1);border:1px solid var(--bd);border-radius:var(--r);overflow:hidden}
+.card-h{
+  padding:.9rem 1.3rem;border-bottom:1px solid var(--bd);
+  font-family:var(--mono);font-size:.68rem;color:var(--muted);
+  letter-spacing:1px;text-transform:uppercase;
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+}
+.card-h .dot{width:7px;height:7px;border-radius:50%;background:var(--amber);flex-shrink:0}
+.card-b{padding:1.3rem}
+
+/* ── UPLOAD ZONE ── */
+.drop-zone{
+  border:2px dashed var(--bd);border-radius:10px;
+  padding:2rem 1rem;text-align:center;cursor:pointer;
+  position:relative;transition:all var(--tr);overflow:hidden;
+}
+.drop-zone:hover,.drop-zone.over{border-color:var(--amber);background:rgba(245,166,35,.04)}
+.drop-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.drop-icon{font-size:2.2rem;margin-bottom:.7rem;display:block}
+.drop-zone h3{font-size:.95rem;font-weight:700}
+.drop-zone p{font-family:var(--mono);font-size:.7rem;color:var(--muted);margin-top:.3rem}
+
+#preview-wrap{display:none;margin-top:.9rem;position:relative;border-radius:10px;overflow:hidden}
+#preview-img{width:100%;max-height:220px;object-fit:cover;display:block}
+.scan-bar{
+  position:absolute;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--amber),transparent);
+  display:none;animation:scanY 1.5s ease-in-out infinite;
+}
+@keyframes scanY{0%{top:5%}50%{top:90%}100%{top:5%}}
+.scan-bar.active{display:block}
+
+/* ── LOCATION ── */
+.loc-row{display:flex;gap:.7rem;margin-top:.9rem;align-items:flex-end}
+.inp-g{flex:1}
+.inp-g label{display:block;font-family:var(--mono);font-size:.65rem;color:var(--muted);margin-bottom:3px;letter-spacing:.4px;text-transform:uppercase}
+.inp-g input{
+  width:100%;background:var(--s2);border:1px solid var(--bd);
+  border-radius:7px;padding:.55rem .8rem;color:var(--text);
+  font-family:var(--mono);font-size:.78rem;outline:none;transition:border-color var(--tr);
+}
+.inp-g input:focus{border-color:var(--amber)}
+
+/* ── BUTTONS ── */
+.btn{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:.6rem 1.2rem;border-radius:7px;border:none;
+  font-family:var(--mono);font-weight:700;cursor:pointer;
+  transition:all var(--tr);letter-spacing:.4px;font-size:.78rem;
+}
+.btn-detect{
+  background:var(--amber);color:#000;
+  width:100%;justify-content:center;
+  margin-top:1rem;padding:.85rem;font-size:.88rem;
+}
+.btn-detect:hover{background:#ffc048;transform:translateY(-1px)}
+.btn-detect:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.btn-gps{background:var(--s2);border:1px solid var(--bd);color:var(--text);flex-shrink:0}
+.btn-gps:hover{border-color:var(--green);color:var(--green)}
+.btn-sm{
+  background:var(--s2);border:1px solid var(--bd);color:var(--muted);
+  padding:.3rem .7rem;font-size:.62rem;border-radius:5px;
+}
+.btn-sm:hover{border-color:var(--red);color:var(--red)}
+
+/* ── RESULT PANEL ── */
+#result{display:none;margin-top:1rem}
+.result-box{border-radius:10px;padding:1.1rem;border:1px solid}
+.result-damage{border-color:var(--red); background:rgba(232,69,69,.06)}
+.result-clean {border-color:var(--green);background:rgba(61,220,132,.06)}
+
+.result-header{display:flex;align-items:center;gap:8px;margin-bottom:.9rem}
+.rbadge{
+  padding:3px 10px;border-radius:20px;
+  font-family:var(--mono);font-size:.68rem;font-weight:700;letter-spacing:1px;
+}
+.rbadge-damage{background:var(--red);color:#fff}
+.rbadge-clean {background:var(--green);color:#000}
+.report-id{font-family:var(--mono);font-size:.68rem;color:var(--muted)}
+
+.meta-g{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.9rem}
+.meta-i{background:rgba(255,255,255,.03);border-radius:7px;padding:.5rem .7rem}
+.meta-k{font-family:var(--mono);font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+.meta-v{font-family:var(--mono);font-size:.82rem;font-weight:700;margin-top:2px}
+
+/* ── CONFIDENCE BAR ── */
+.conf-row{display:flex;align-items:center;gap:10px;margin-bottom:.6rem}
+.conf-labels{display:flex;justify-content:space-between;margin-bottom:3px}
+.conf-labels span{font-family:var(--mono);font-size:.65rem;color:var(--muted)}
+.track{height:7px;background:var(--bd);border-radius:4px;overflow:hidden;flex:1}
+.fill{height:100%;border-radius:4px;transition:width 1s ease}
+.fill-damage{background:var(--red)}
+.fill-clean {background:var(--green)}
+.fill-neutral{background:var(--amber)}
+.pct{font-family:var(--mono);font-size:.78rem;font-weight:700;min-width:42px;text-align:right}
+
+/* ── DATASET SAVED BADGE ── */
+.saved-badge{
+  display:flex;align-items:center;gap:6px;
+  background:rgba(61,220,132,.12);border:1px solid var(--green);
+  border-radius:7px;padding:.4rem .8rem;
+  font-family:var(--mono);font-size:.68rem;color:var(--green);margin-top:.7rem;
+}
+
+/* ── MAP ── */
+#map{height:280px;border-radius:9px;border:1px solid var(--bd)}
+
+/* ── TABLE ── */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{
+  font-family:var(--mono);font-size:.62rem;text-transform:uppercase;
+  letter-spacing:.8px;color:var(--muted);padding:.6rem 1rem;
+  text-align:left;border-bottom:1px solid var(--bd);white-space:nowrap;
+}
+td{
+  padding:.7rem 1rem;font-family:var(--mono);font-size:.72rem;
+  border-bottom:1px solid rgba(37,43,53,.4);vertical-align:middle;
+}
+tr:hover td{background:rgba(255,255,255,.018)}
+.thumb{width:44px;height:32px;object-fit:cover;border-radius:5px;border:1px solid var(--bd)}
+
+.pill{
+  display:inline-block;padding:2px 8px;border-radius:8px;
+  font-size:.62rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
+}
+.pill-damaged{background:rgba(232,69,69,.15);color:var(--red)}
+.pill-clean  {background:rgba(61,220,132,.15);color:var(--green)}
+
+.empty{text-align:center;padding:3rem;color:var(--dim);font-family:var(--mono);font-size:.78rem}
+
+/* ── MODEL WARNING ── */
+.model-warn{
+  background:rgba(232,69,69,.08);border:1px solid var(--red);
+  border-radius:10px;padding:1rem 1.2rem;margin-bottom:1.2rem;
+  font-family:var(--mono);font-size:.75rem;color:var(--red);line-height:1.7;
+}
+.model-warn strong{color:#ff6b6b}
+
+/* ── SPINNER ── */
+.spin{
+  display:inline-block;width:14px;height:14px;
+  border:2px solid rgba(0,0,0,.25);border-top-color:#000;
+  border-radius:50%;animation:spinning .7s linear infinite;
+}
+@keyframes spinning{to{transform:rotate(360deg)}}
+
+/* ── TOAST ── */
+#toast{
+  position:fixed;bottom:1.5rem;right:1.5rem;z-index:999;
+  padding:.85rem 1.2rem;border-radius:9px;
+  font-family:var(--mono);font-size:.75rem;max-width:300px;
+  transform:translateY(80px);opacity:0;transition:all .3s;
+}
+#toast.show{transform:translateY(0);opacity:1}
+#toast.ok {background:var(--green);color:#000}
+#toast.err{background:var(--red);  color:#fff}
+#toast.warn{background:var(--amber);color:#000}
+>>>>>>> f4b14cb (Initial commit)
 </style>
 </head>
 <body>
 
+<<<<<<< HEAD
 <header>
   <div class="logo">
     <div class="logo-icon">🚧</div>
@@ -691,16 +924,119 @@
         </div>
 
         <button class="btn btn-primary" id="analyze-btn" onclick="analyzeImage()" disabled>
+=======
+<!-- HEADER -->
+<header>
+  <a href="/" class="logo">
+    <div class="logo-box">🚧</div>
+    <span class="logo-text">RoadScan<span>AI</span></span>
+  </a>
+  <span style="font-family:var(--mono);font-size:.65rem;color:var(--muted)">
+    CV PROJECT — EfficientNet-B4 Detection
+  </span>
+  <div class="header-right">
+    {% if model_loaded %}
+      <span class="model-badge badge-ok">● MODEL READY</span>
+    {% else %}
+      <span class="model-badge badge-err">● MODEL NOT LOADED</span>
+    {% endif %}
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- HERO -->
+  <div class="hero">
+    <h1>Road Damage<br><span>Detection System</span></h1>
+    <p>// EfficientNet-B4 · Upload photo → Detect → Auto-save to dataset</p>
+  </div>
+
+  {% if not model_loaded %}
+  <div class="model-warn">
+    <strong>⚠ Model not loaded.</strong><br>
+    1. Run the Colab notebook to train the model<br>
+    2. Download <code>road_damage_model.pth</code><br>
+    3. Place it in the same folder as <code>app.py</code><br>
+    4. Restart Flask: <code>python app.py</code>
+  </div>
+  {% endif %}
+
+  <!-- STATS -->
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-n" id="s-total">0</div>
+      <div class="stat-l">Total Scans</div>
+    </div>
+    <div class="stat">
+      <div class="stat-n" id="s-damaged" style="color:var(--red)">0</div>
+      <div class="stat-l">Damaged</div>
+    </div>
+    <div class="stat">
+      <div class="stat-n" id="s-clean" style="color:var(--green)">0</div>
+      <div class="stat-l">Clean</div>
+    </div>
+    <div class="stat">
+      <div class="stat-n" id="s-pct" style="color:var(--muted)">—</div>
+      <div class="stat-l">Damage Rate</div>
+    </div>
+  </div>
+
+  <!-- MAIN GRID -->
+  <div class="grid">
+
+    <!-- LEFT: Upload & Detect -->
+    <div class="card">
+      <div class="card-h"><span class="dot"></span>UPLOAD & DETECT</div>
+      <div class="card-b">
+
+        <div class="drop-zone" id="drop">
+          <input type="file" id="file-in" accept="image/*">
+          <span class="drop-icon">📸</span>
+          <h3>Drop road photo here</h3>
+          <p>JPG · PNG · WEBP · max 16 MB</p>
+        </div>
+
+        <div id="preview-wrap">
+          <img id="preview-img" src="" alt="preview">
+          <div class="scan-bar" id="scan-bar"></div>
+        </div>
+
+        <!-- Location inputs -->
+        <div class="loc-row">
+          <div class="inp-g" style="flex:2">
+            <label>Location Name</label>
+            <input id="loc-name" type="text" placeholder="e.g. MG Road, Nagpur">
+          </div>
+          <button class="btn btn-gps" onclick="getGPS()">📍 GPS</button>
+        </div>
+        <div class="loc-row">
+          <div class="inp-g">
+            <label>Latitude</label>
+            <input id="lat" type="number" step="0.0001" placeholder="21.1458">
+          </div>
+          <div class="inp-g">
+            <label>Longitude</label>
+            <input id="lng" type="number" step="0.0001" placeholder="79.0882">
+          </div>
+        </div>
+
+        <button class="btn btn-detect" id="detect-btn" onclick="runDetect()" disabled>
+>>>>>>> f4b14cb (Initial commit)
           🔍 Detect Road Damage
         </button>
 
         <!-- Result -->
+<<<<<<< HEAD
         <div id="result-panel"></div>
+=======
+        <div id="result"></div>
+>>>>>>> f4b14cb (Initial commit)
       </div>
     </div>
 
     <!-- RIGHT: Map -->
     <div class="card">
+<<<<<<< HEAD
       <div class="card-header">
         <div class="dot" style="background:var(--accent3)"></div>
         DAMAGE MAP
@@ -718,10 +1054,27 @@
             <span class="sev-pill sev-medium-pill">● MEDIUM</span>
             <span class="sev-pill sev-low-pill">● LOW</span>
           </div>
+=======
+      <div class="card-h">
+        <span style="display:flex;align-items:center;gap:8px">
+          <span class="dot" style="background:var(--green)"></span>
+          DAMAGE MAP
+        </span>
+      </div>
+      <div class="card-b">
+        <div id="map"></div>
+        <div style="margin-top:1rem;display:flex;gap:.5rem;flex-wrap:wrap">
+          <span class="pill pill-damaged">● Damaged</span>
+          <span class="pill pill-clean">● Clean</span>
+          <span style="font-family:var(--mono);font-size:.65rem;color:var(--dim);margin-left:auto">
+            Click pins for details
+          </span>
+>>>>>>> f4b14cb (Initial commit)
         </div>
       </div>
     </div>
 
+<<<<<<< HEAD
     <!-- BOTTOM: Reports Table -->
     <div class="card reports-section">
       <div class="card-header" style="justify-content:space-between">
@@ -863,12 +1216,148 @@ async function analyzeImage() {
   } catch (err) {
     document.getElementById('scan-overlay').classList.remove('active');
     showToast('Network error. Is the server running?', 'error');
+=======
+    <!-- FULL WIDTH: Dataset Table -->
+    <div class="card" style="grid-column:1/-1">
+      <div class="card-h">
+        <span style="display:flex;align-items:center;gap:8px">
+          <span class="dot" style="background:var(--blue)"></span>
+          LIVE DATASET
+        </span>
+        <button class="btn btn-sm" onclick="loadData()">↻ Refresh</button>
+      </div>
+      <div class="card-b" style="padding:0">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Image</th>
+                <th>ID</th>
+                <th>Label</th>
+                <th>P(damage)</th>
+                <th>Confidence</th>
+                <th>Location</th>
+                <th>GPS</th>
+                <th>Time</th>
+              </tr>
+            </thead>
+            <tbody id="tbody">
+              <tr><td colspan="8"><div class="empty">No records yet — upload a road photo to begin</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /grid -->
+</div><!-- /wrap -->
+
+<div id="toast"></div>
+
+<script>
+// ── MAP ───────────────────────────────────────────────────────────
+const map = L.map('map').setView([21.1458, 79.0882], 12);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+  {attribution:'© CartoDB'}).addTo(map);
+
+const pinMarkers = {};
+
+function addPin(rec) {
+  const lat = parseFloat(rec.latitude);
+  const lng = parseFloat(rec.longitude);
+  if (!lat || !lng || isNaN(lat) || isNaN(lng)) return;
+  const color = rec.label === 'damaged' ? '#e84545' : '#3ddc84';
+  const icon = L.divIcon({
+    className:'',
+    html:`<div style="width:12px;height:12px;border-radius:50%;background:${color};
+           border:2px solid #fff;box-shadow:0 0 8px ${color}"></div>`,
+    iconSize:[12,12], iconAnchor:[6,6]
+  });
+  const m = L.marker([lat,lng],{icon}).addTo(map)
+    .bindPopup(`<b style="color:#f5a623">${rec.image_id||rec.filename}</b>
+      <br>${(rec.label||'').toUpperCase()}
+      <br>P(damage): ${(parseFloat(rec.damage_probability||0)*100).toFixed(1)}%
+      <br>${rec.location_name||''}`);
+  pinMarkers[rec.image_id || rec.filename] = m;
+}
+
+// ── FILE INPUT ────────────────────────────────────────────────────
+let selectedFile = null;
+const fileIn = document.getElementById('file-in');
+const drop   = document.getElementById('drop');
+
+fileIn.addEventListener('change', () => { if(fileIn.files[0]) setFile(fileIn.files[0]) });
+drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('over') });
+drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+drop.addEventListener('drop', e => {
+  e.preventDefault(); drop.classList.remove('over');
+  if(e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]);
+});
+
+function setFile(f) {
+  selectedFile = f;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('preview-img').src = e.target.result;
+    document.getElementById('preview-wrap').style.display = 'block';
+    document.getElementById('detect-btn').disabled = false;
+    document.getElementById('result').style.display = 'none';
+  };
+  reader.readAsDataURL(f);
+}
+
+// ── GPS ───────────────────────────────────────────────────────────
+function getGPS() {
+  if(!navigator.geolocation) { toast('Geolocation not supported','err'); return; }
+  navigator.geolocation.getCurrentPosition(p => {
+    document.getElementById('lat').value = p.coords.latitude.toFixed(6);
+    document.getElementById('lng').value = p.coords.longitude.toFixed(6);
+    map.setView([p.coords.latitude, p.coords.longitude], 15);
+    toast('📍 GPS location acquired','ok');
+  }, () => toast('Could not get location','err'));
+}
+
+// ── DETECT ────────────────────────────────────────────────────────
+async function runDetect() {
+  if(!selectedFile) return;
+
+  const btn = document.getElementById('detect-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spin"></div> Analyzing...';
+  document.getElementById('scan-bar').classList.add('active');
+  document.getElementById('result').style.display = 'none';
+
+  const form = new FormData();
+  form.append('image', selectedFile);
+  form.append('lat',           document.getElementById('lat').value || '');
+  form.append('lng',           document.getElementById('lng').value || '');
+  form.append('location_name', document.getElementById('loc-name').value || 'Unknown');
+
+  try {
+    const res  = await fetch('/api/detect', {method:'POST', body:form});
+    const data = await res.json();
+
+    document.getElementById('scan-bar').classList.remove('active');
+
+    if(res.ok) {
+      renderResult(data);
+      toast(data.is_damaged ? '⚠ Damage detected & saved' : '✅ Clean road — saved to dataset',
+            data.is_damaged ? 'warn' : 'ok');
+      loadData();
+    } else {
+      toast(data.error || 'Detection failed', 'err');
+    }
+  } catch(e) {
+    document.getElementById('scan-bar').classList.remove('active');
+    toast('Network error', 'err');
+>>>>>>> f4b14cb (Initial commit)
   }
 
   btn.disabled = false;
   btn.innerHTML = '🔍 Detect Road Damage';
 }
 
+<<<<<<< HEAD
 function showResult(type, data) {
   const panel = document.getElementById('result-panel');
   panel.style.display = 'block';
@@ -1011,6 +1500,137 @@ function showToast(msg, type = 'success') {
 // Init
 loadReports();
 loadStats();
+=======
+function renderResult(d) {
+  const panel = document.getElementById('result');
+  panel.style.display = 'block';
+
+  const isDamaged = d.is_damaged;
+  const cls  = isDamaged ? 'result-damage' : 'result-clean';
+  const bcls = isDamaged ? 'rbadge-damage' : 'rbadge-clean';
+  const lbl  = isDamaged ? '⚠ DAMAGE DETECTED' : '✅ CLEAN ROAD';
+  const mainProb = isDamaged ? d.damage_prob : d.clean_prob;
+
+  panel.innerHTML = `
+    <div class="result-box ${cls}">
+      <div class="result-header">
+        <span class="rbadge ${bcls}">${lbl}</span>
+        <span class="report-id">#${d.image_id}</span>
+      </div>
+
+      <div class="meta-g">
+        <div class="meta-i">
+          <div class="meta-k">Result</div>
+          <div class="meta-v" style="color:${isDamaged?'var(--red)':'var(--green)'}">
+            ${(d.label||'').toUpperCase()}
+          </div>
+        </div>
+        <div class="meta-i">
+          <div class="meta-k">Confidence</div>
+          <div class="meta-v">${d.confidence}%</div>
+        </div>
+        <div class="meta-i">
+          <div class="meta-k">P(Damaged)</div>
+          <div class="meta-v">${d.damage_prob}%</div>
+        </div>
+        <div class="meta-i">
+          <div class="meta-k">P(Clean)</div>
+          <div class="meta-v">${d.clean_prob}%</div>
+        </div>
+      </div>
+
+      <div style="margin-bottom:.4rem">
+        <div class="conf-labels"><span>Damaged</span><span>${d.damage_prob}%</span></div>
+        <div class="track"><div class="fill fill-damage" style="width:${d.damage_prob}%"></div></div>
+      </div>
+      <div>
+        <div class="conf-labels"><span>Clean</span><span>${d.clean_prob}%</span></div>
+        <div class="track"><div class="fill fill-clean" style="width:${d.clean_prob}%"></div></div>
+      </div>
+
+      <div class="saved-badge">
+        ✓ Automatically saved to dataset &nbsp;·&nbsp; ${d.location_name}
+        ${d.latitude ? `&nbsp;·&nbsp; ${d.latitude.toFixed(4)}, ${d.longitude.toFixed(4)}` : ''}
+      </div>
+    </div>`;
+
+  // Pan map
+  if(d.latitude && d.longitude) {
+    map.setView([d.latitude, d.longitude], 15);
+    addPin({
+      image_id: d.image_id,
+      label: d.label,
+      damage_probability: d.damage_prob/100,
+      location_name: d.location_name,
+      latitude: d.latitude,
+      longitude: d.longitude
+    });
+  }
+}
+
+// ── LOAD DATA ─────────────────────────────────────────────────────
+async function loadData() {
+  try {
+    const [dRes, sRes] = await Promise.all([
+      fetch('/api/dataset'), fetch('/api/stats')
+    ]);
+    const {records} = await dRes.json();
+    const stats     = await sRes.json();
+
+    // Update stats bar
+    document.getElementById('s-total'  ).textContent = stats.total   || 0;
+    document.getElementById('s-damaged').textContent = stats.damaged  || 0;
+    document.getElementById('s-clean'  ).textContent = stats.clean    || 0;
+    const pct = stats.total ? Math.round(stats.damaged/stats.total*100) : '—';
+    document.getElementById('s-pct').textContent = stats.total ? pct+'%' : '—';
+
+    // Table
+    const tbody = document.getElementById('tbody');
+    if(!records || !records.length) {
+      tbody.innerHTML = '<tr><td colspan="8"><div class="empty">No records — upload a road photo to begin</div></td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = [...records].reverse().map(r => {
+      const prob = parseFloat(r.damage_probability || 0);
+      const probPct = (prob*100).toFixed(1);
+      const ts = r.timestamp ? new Date(r.timestamp).toLocaleString() : '—';
+      const gps = (r.latitude && r.longitude)
+        ? `${parseFloat(r.latitude).toFixed(4)}, ${parseFloat(r.longitude).toFixed(4)}`
+        : '—';
+      return `<tr>
+        <td><img class="thumb" src="/uploads/${r.label || 'damaged'}/${r.filename}"
+             onerror="this.style.display='none'" loading="lazy"></td>
+        <td style="color:var(--amber)">${r.image_id || r.filename}</td>
+        <td><span class="pill pill-${r.label}">${(r.label||'—').toUpperCase()}</span></td>
+        <td>${probPct}%</td>
+        <td style="color:${r.confidence_level==='high'?'var(--green)':r.confidence_level==='medium'?'var(--amber)':'var(--muted)'}">${r.confidence_level||'—'}</td>
+        <td style="color:var(--muted);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.location_name||'—'}</td>
+        <td style="color:var(--dim)">${gps}</td>
+        <td style="color:var(--dim)">${ts}</td>
+      </tr>`;
+    }).join('');
+
+    // Add map pins
+    Object.values(pinMarkers).forEach(m => map.removeLayer(m));
+    records.forEach(addPin);
+
+  } catch(e) { console.error(e) }
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────
+function toast(msg, type='ok') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast show ${type}`;
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.classList.remove('show'), 3200);
+}
+
+// Init
+loadData();
+setInterval(loadData, 30000);
+>>>>>>> f4b14cb (Initial commit)
 </script>
 </body>
 </html>
